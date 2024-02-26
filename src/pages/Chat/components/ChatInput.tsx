@@ -1,30 +1,29 @@
-import {Dispatch, FC, SetStateAction} from 'react';
+import {FC,  useCallback} from 'react';
 import {IoMdSend} from 'react-icons/io';
 
 import socket from '../../../lib/socket';
+import useLocalStorage from "../../../hooks/useLoaclStorage";
 
 type Props = {
-    setMessages: Dispatch<SetStateAction<any>>;
+    clientId: string;
 }
 
-const ChatInput: FC<Props> = ({setMessages}) => {
+const ChatInput: FC<Props> = ({clientId}) => {
+    const {value} = useLocalStorage<any>('user', {})
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = useCallback(async (e: any) => {
         e.preventDefault();
-        if (!e.target.chat.value) return;
+        if (!e.target.chat.value.trim()) return;
         const message = {
             text: e.target.chat.value,
-            userId: 'user?.id',
+            userId: clientId,
             user: {
-                username: 'username',
+                username: value.username,
             },
         }
-        setMessages(message)
-        socket.on('addMessage', (message) => {
-            console.log(message,'/////////////')
-        });
+        socket.emit("addMessage", message);
         e.target.chat.value = '';
-    };
+    }, [value, clientId])
 
     return (
         <form onSubmit={handleSubmit} method="POST"

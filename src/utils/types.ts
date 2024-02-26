@@ -1,18 +1,21 @@
 type signFormType = {
-  username: string;
+    username: string;
+    image:string
 };
 
 type User = {
-  id: string;
-  username: string;
-  image: string;
+    id?: string;
+    username: string;
+    image?: any;
 };
 
-type Message = {
-  id: string;
-  userId: string;
-  user?: User;
-  text?: string;
-  images?: string[];
-  createdAt: Date;
+type TMessage = {
+    id: string;
+    userId: string;
+    user?: User;
+    text?: string;
+    images?: string[];
+    createdAt: Date;
 };
+
+export type {TMessage, User, signFormType}

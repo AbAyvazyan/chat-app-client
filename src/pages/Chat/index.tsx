@@ -1,68 +1,51 @@
 import {useEffect, useState} from 'react'
-import {useLocation} from 'react-router-dom';
-
 import PageInfo from '../../components/layout/ContentArea/PageInfo';
-import Spinner from '../../components/loading/Spinner';
 import useChatScroll from '../../hooks/useChatScroll';
 import socket from "../../lib/socket";
 import ChatInput from './components/ChatInput';
 import Message from './components/Message';
+import useLocalStorage from "../../hooks/useLoaclStorage";
+import {TMessage} from "../../utils/types";
 
 const Chat = () => {
-    const user: any = {}
-
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isPending, setIsPending] = useState<boolean>(false);
+    const [messages, setMessages] = useState<TMessage[]>([]);
     const ref = useChatScroll(messages);
-
+    const {value, setStoredValue} = useLocalStorage<string>('socketId', '')
 
     useEffect(() => {
-        // const socket = io(API_BASE_URL, {path: '/messages', transports: ['websocket', 'polling'],})
         socket.connect()
 
-        socket.on('getAllMessages', (allMessages) => {
+        socket.on('connect', () => {
+            setStoredValue(socket.id)
+        });
+
+        socket.on('allMessages', (allMessages: any) => {
             setMessages(allMessages);
         });
 
-        socket.emit('message', {name: 'Nest'});
-
         return () => {
-            socket.off('getAllMessages');
+            socket.off('allMessages');
             socket.disconnect()
         };
-    }, []);
-
-    const addNewMessageHandler = (message: any) => {
-        setIsPending(true)
-        setMessages(prevState => [...prevState, message])
-        setIsPending(false)
-    }
-
+    }, [setStoredValue]);
 
     return (
         <section className='h-full relative overflow-hidden'>
             <PageInfo
-                isChannel={true}
                 name={'Room'}
-                participants={null}
-                image={'https://e7.pngegg.com/pngimages/799/987/png-clipart-computer-icons-avatar-icon-design-avatar-heroes-computer-wallpaper-thumbnail.png'}
             />
             <div ref={ref} className='flex flex-col overflow-x-hidden overflow-y-auto pb-10 h-[85%] scroll-smooth'>
                 {
-                    !isPending
+                    (messages && messages.length > 0)
                         ?
-                        (messages && messages.length > 0)
-                            ?
-                            messages.map((message, index) => {
-                                return <Message key={index} message={message}/>
-                            })
-                            :
-                            <p className='bg-cyan-600 p-3 m-2 rounded-md text-center'>There is no any messages yet.</p>
+                        messages.map((message: TMessage, index: number) => {
+                            return <Message key={index} message={message}/>
+                        })
                         :
-                        <Spinner size='lg'/>
+                        <p className='bg-cyan-600 p-3 m-2 rounded-md text-center'>There is no any messages yet.</p>
                 }
             </div>
-            <ChatInput setMessages={addNewMessageHandler}/>
+            <ChatInput clientId={value}/>
         </section>
     )
 }
